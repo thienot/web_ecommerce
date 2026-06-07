@@ -1,0 +1,18 @@
+{
+    "code": "fixed_shipping",
+    "name": {
+        "vi": "Phí giao hàng",
+        "en": "Fixed Shipping"
+    },
+    "description": {
+        "vi": "Phí giao hàng",
+        "en": "Fixed Shipping"
+    },
+    "type": "shipping",
+    "version": "v1.0.0",
+    "icon": "https://cdn-icons-png.flaticon.com/512/5952/5952766.png",
+    "author": {
+        "name": "shop",
+        "email": "giaolinhdo@gmail.com"
+    }
+}

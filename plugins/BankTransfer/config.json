@@ -1,0 +1,18 @@
+{
+    "code": "bank_transfer",
+    "name": {
+        "vi": "Chuyển khoản ngân hàng",
+        "en": "Bank Transfer"
+    },
+    "description": {
+        "vi": "Chuyển khoản ngân hàng",
+        "en": "Bank Transfer"
+    },
+    "type": "billing",
+    "version": "v1.0.0",
+    "icon": "https://icons.iconarchive.com/icons/pictogrammers/material/512/bank-transfer-icon.png",
+    "author": {
+        "name": "shop",
+        "email": "giaolinhdo@gmail.com"
+    }
+}

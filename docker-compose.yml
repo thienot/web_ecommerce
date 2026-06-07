@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+  # PHP & Laravel Application
+  app:
+    image: ghcr.io/dogiaolinh/ecommerce-laravel-app:latest
+    container_name: laravel_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    entrypoint: ["/var/www/html/docker/app/entrypoint.sh"]
+    command: ["php-fpm"]
+    volumes:
+      - ./:/var/www/html
+      - ./docker/app/php.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - laravel-network
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_DATABASE=${DB_DATABASE:-innoshop}
+      - DB_USERNAME=root
+      - DB_PASSWORD=${DB_ROOT_PASSWORD:-Dogiaolinh1?}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    healthcheck:
+      test: ["CMD", "php", "-v"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx Service
+  webserver:
+    image: ghcr.io/dogiaolinh/ecommerce-nginx:latest
+    container_name: laravel_webserver
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www/html  # Mount project hiện tại
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+    networks:
+      - laravel-network
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # MySQL Database
+  db:
+    image: ghcr.io/dogiaolinh/ecommerce-mysql:latest
+    container_name: laravel_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-innoshop}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-Dogiaolinh1?}
+      MYSQL_USER: ${DB_USERNAME:-linh}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-Dogiaolinh1?}
+      SERVICE_NAME: mysql
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+      - mysql_logs:/var/log/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - laravel-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-Dogiaolinh1?}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Redis
+  redis:
+    image: ghcr.io/dogiaolinh/ecommerce-redis:latest
+    container_name: laravel_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - laravel-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # phpMyAdmin (optional)
+  phpmyadmin:
+    image: ghcr.io/dogiaolinh/ecommerce-phpmyadmin:latest
+    container_name: laravel_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-Dogiaolinh1?}
+    networks:
+      - laravel-network
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  laravel-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
+  redisdata:
+    driver: local
+  mysql_logs:
+    driver: local
